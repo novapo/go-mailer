@@ -3,5 +3,12 @@
     "username": "John",
     "password": "Doe",
     "host": "smtp.example.com"
-  }
+  },
+  "rcpt": "john.doe@example.com",
+  "formData": {
+    "name": "c_name",
+    "email": "c_email",
+    "message": "c_message"
+  },
+  "port": 8080
 }

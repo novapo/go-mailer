@@ -12,8 +12,17 @@ type smtp struct {
 	Host     string `json:host`
 }
 
+type formData struct {
+	Name    string `json:name`
+	Email   string `json:email`
+	Message string `json:message`
+}
+
 type Config struct {
-	Smtp smtp `json:"smtp"`
+	Smtp     smtp     `json:smtp`
+	Rcpt     string   `json:rcpt`
+	FormData formData `json:formData`
+	Port	 int	  `json:port`
 }
 
 func FromFile(filename string) (*Config, error) {
