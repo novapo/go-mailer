@@ -1,0 +1,7 @@
+{
+  "smtp": {
+    "username": "John",
+    "password": "Doe",
+    "host": "smtp.example.com"
+  }
+}
