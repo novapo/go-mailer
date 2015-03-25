@@ -2,40 +2,39 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/smtp"
-	"strings"
+	"strconv"
 	"text/template"
-
-	"github.com/novapo/go-mailer/config"
 )
 
 type MailParams struct {
 	From    string
 	To      string
-	Subject string
 	Name    string
 	Email   string
 	Message string
 }
 
-var (
-	conf *config.Config
-)
+type FormData struct {
+	Name    string `json:"c_name"`
+	Email   string `json:"c_email"`
+	Message string `json:"c_message"`
+}
+
+type Response struct {
+	Status  int    `json:"sendstatus"`
+	Message string `json:"message"`
+}
 
 func main() {
+	usage()
 
-	c, err := config.FromFile("config.json")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	conf = c
-
-	err = http.ListenAndServe(conf.Addr, http.HandlerFunc(handler))
+	err := http.ListenAndServe(":"+strconv.Itoa(port), http.HandlerFunc(handler))
+	log.Fatal(err)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -44,59 +43,44 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	r.ParseForm()
+	formData := &FormData{}
 
-	name := ""
-	email := ""
-	message := ""
-
-	if tmp := r.Form[conf.FormData.Name]; len(tmp) != 0 {
-		name = tmp[0]
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(formData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	if tmp := r.Form[conf.FormData.Email]; len(tmp) != 0 {
-		email = tmp[0]
-	}
+	parameters := MailParams{username, recipients.String(), formData.Name, formData.Email, formData.Message}
+	response := &Response{}
 
-	if tmp := r.Form[conf.FormData.Message]; len(tmp) != 0 {
-		message = tmp[0]
-	}
-
-	if name == "" || email == "" || message == "" {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-
-	parameters := MailParams{conf.From, strings.Join([]string(conf.To), ","), conf.Subject, name, email, message}
-
-	// Set up authentication information.
-	auth := smtp.PlainAuth("", conf.Smtp.Username, conf.Smtp.Password, conf.Smtp.Host)
+	auth := smtp.PlainAuth("", username, password, smtpHost)
 
 	buffer := new(bytes.Buffer)
 	template := template.Must(template.New("emailTemplate").Parse(emailScript()))
 	template.Execute(buffer, &parameters)
 
-	fmt.Println(buffer)
-
-	// Connect to the server, authenticate, set the sender and recipient,
-	// and send the email all in one step.
-	fmt.Println("Send mail...")
-	err := smtp.SendMail(conf.Smtp.Host+":"+conf.Smtp.Port, auth, conf.From, conf.To, buffer.Bytes())
+	fmt.Println(buffer.String())
+	err = smtp.SendMail(smtpHost+":"+strconv.Itoa(smtpPort), auth, username, recipients, buffer.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		w.WriteHeader(http.StatusServiceUnavailable)
+		response.Status = 0
+		response.Message = "Email konnte nicht versendet werden."
+	} else {
+		w.WriteHeader(http.StatusOK)
+		response.Status = 1
+		response.Message = "Vielen Dank für Ihre Anfrage."
 	}
-	fmt.Println("Done")
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	json.NewEncoder(w).Encode(response)
 }
 
 func emailScript() (script string) {
 	return `From: {{.From}}
 To: {{.To}}
-Subject: {{.Subject}}
+Subject: Anfrage von {{.Name}}({{.Email}})
 MIME-version: 1.0
-Content-Type: text/html; charset="UTF-8"
-
-<h1>Anfrage von {{.Name}}({{.Email}})</h1>
+Content-Type: text/plain; charset="UTF-8"
 
 {{.Message}}`
 }
