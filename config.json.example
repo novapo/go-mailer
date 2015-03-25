@@ -2,7 +2,8 @@
   "smtp": {
     "username": "John",
     "password": "Doe",
-    "host": "smtp.example.com"
+    "host": "smtp.example.com",
+    "port": "25"
   },
   "rcpt": "john.doe@example.com",
   "formData": {
@@ -10,5 +11,5 @@
     "email": "c_email",
     "message": "c_message"
   },
-  "port": 8080
+  "addr": ":8080"
 }

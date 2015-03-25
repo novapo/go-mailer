@@ -24,7 +24,7 @@ func TestFromFile(t *testing.T) {
 	assertEqual(t, "c_email", c.FormData.Email)
 	assertEqual(t, "c_message", c.FormData.Message)
 
-	assertEqual(t, 8080, c.Port)
+	assertEqual(t, ":8080", c.Addr)
 }
 
 func assertEqual(t *testing.T, expected, actual interface{}) {

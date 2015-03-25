@@ -10,6 +10,7 @@ type smtp struct {
 	Username string `json:username`
 	Password string `json:password`
 	Host     string `json:host`
+	Port     string `json:port`
 }
 
 type formData struct {
@@ -20,9 +21,11 @@ type formData struct {
 
 type Config struct {
 	Smtp     smtp     `json:smtp`
-	Rcpt     string   `json:rcpt`
+	From     string   `json:from`
+	Subject	 string	  `json:subject`
+	To       []string `json:to`
 	FormData formData `json:formData`
-	Port	 int	  `json:port`
+	Addr     string   `json:addr`
 }
 
 func FromFile(filename string) (*Config, error) {
