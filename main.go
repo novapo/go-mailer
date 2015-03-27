@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/smtp"
@@ -11,7 +10,7 @@ import (
 	"text/template"
 )
 
-type MailParams struct {
+type mailParams struct {
 	From    string
 	To      string
 	Name    string
@@ -19,13 +18,13 @@ type MailParams struct {
 	Message string
 }
 
-type FormData struct {
+type formData struct {
 	Name    string `json:"c_name"`
 	Email   string `json:"c_email"`
 	Message string `json:"c_message"`
 }
 
-type Response struct {
+type response struct {
 	Status  int    `json:"sendstatus"`
 	Message string `json:"message"`
 }
@@ -43,7 +42,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formData := &FormData{}
+	formData := &formData{}
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(formData)
@@ -51,8 +50,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	parameters := MailParams{username, recipients.String(), formData.Name, formData.Email, formData.Message}
-	response := &Response{}
+	parameters := mailParams{username, recipients.String(), formData.Name, formData.Email, formData.Message}
+	response := &response{}
 
 	auth := smtp.PlainAuth("", username, password, smtpHost)
 
@@ -60,7 +59,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	template := template.Must(template.New("emailTemplate").Parse(emailScript()))
 	template.Execute(buffer, &parameters)
 
-	fmt.Println(buffer.String())
 	err = smtp.SendMail(smtpHost+":"+strconv.Itoa(smtpPort), auth, username, recipients, buffer.Bytes())
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
