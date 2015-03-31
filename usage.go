@@ -14,13 +14,18 @@ var (
 	recipients Recipients
 )
 
+// Recipients is a array of string which will be set from a comma-seperate list
 type Recipients []string
 
+// Set is the function to set all Recipients from the comma-seperate string
+// Is is necessary for implementing the Value interface
 func (r *Recipients) Set(rcpt string) error {
 	*r = strings.Split(rcpt, ",")
 	return nil
 }
 
+// String converts the Recipients to a string
+// Is is necessary for implementing the Value interface
 func (r *Recipients) String() string {
 	return strings.Join(*r, ",")
 }
